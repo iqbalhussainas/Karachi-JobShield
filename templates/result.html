@@ -1,0 +1,86 @@
+
+{% extends "base.html" %}
+
+{% block title %}Job Advertisement Analysis - Karachi JobShield{% endblock %}
+
+{% block content %}
+
+<div class="card">
+
+    <h2>Analysis Result</h2>
+
+    <h3>Submitted Advertisement</h3>
+
+    <div class="result-card">
+        <p class="advertisement">{{ job_ad }}</p>
+    </div>
+
+    <div class="result-card">
+
+        <h3>Risk Assessment</h3>
+
+        <p>Risk Score:</p>
+
+        <div class="risk-score">
+            {{ risk_score }}/100
+        </div>
+
+        <p>Risk Level:</p>
+
+        <div class="risk-level {{ risk_level|replace(' ', '-') }}">
+            {{ risk_level }}
+        </div>
+
+    </div>
+
+    <div class="findings">
+
+        <h3>Security Findings</h3>
+
+        {% if warnings %}
+
+            <ul>
+                {% for warning in warnings %}
+                    <li>{{ warning }}</li>
+                {% endfor %}
+            </ul>
+
+        {% else %}
+
+            <p>No warning signs detected by our basic rules.</p>
+
+        {% endif %}
+
+    </div>
+
+    <div class="disclaimer">
+
+        <strong>Educational Disclaimer:</strong>
+
+        <p>
+            Karachi JobShield uses basic keyword-based analysis
+            to identify possible warning signs in job advertisements.
+            The risk score is an indicator, not proof that an
+            advertisement is fraudulent or genuine.
+            Always verify the employer through official sources.
+        </p>
+
+    </div>
+
+    <br>
+
+    <p>
+        <a href="{{ url_for('home') }}">
+            Analyze Another Advertisement
+        </a>
+    </p>
+
+    <p>
+        <a href="{{ url_for('history') }}">
+            View Scan History
+        </a>
+    </p>
+
+</div>
+
+{% endblock %}

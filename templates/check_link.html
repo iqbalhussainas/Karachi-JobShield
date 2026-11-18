@@ -1,0 +1,67 @@
+
+{% extends "base.html" %}
+
+{% block title %}Job Link Checker - Karachi JobShield{% endblock %}
+
+{% block content %}
+
+<div class="card">
+
+    <h2>Check a Job Application Link</h2>
+
+    <p>
+        Paste a suspicious job advertisement or
+        application link below.
+    </p>
+
+    <form method="POST" action="{{ url_for('check_link') }}">
+
+        <input type="hidden"
+               name="csrf_token"
+               value="{{ csrf_token() }}">
+
+        <label for="job_link">
+            Job Website URL:
+        </label>
+
+        <input
+            type="text"
+            id="job_link"
+            name="job_link"
+            placeholder="https://example.com/job"
+            maxlength="2048"
+            required
+        >
+
+        <br><br>
+
+        <button type="submit">
+            Check Job Link
+        </button>
+
+    </form>
+
+    <div class="notice">
+
+        <strong>Safety Notice:</strong>
+
+        <p>
+            This tool checks suspicious URL patterns.
+            It does not guarantee that a website is safe.
+            Do not enter passwords, OTPs or banking details
+            into suspicious websites.
+        </p>
+
+    </div>
+
+    <hr>
+
+    <p><a href="{{ url_for('home') }}">Back to Home</a></p>
+
+    <p><a href="{{ url_for('dashboard') }}">My Dashboard</a></p>
+
+    <p><a href="{{ url_for('history') }}">Scan History</a></p>
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,74 @@
+
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Karachi JobShield{% endblock %}
+
+{% block content %}
+
+<div class="dashboard-content">
+
+    <!-- Welcome Section -->
+    <section class="dashboard-welcome">
+        <h2>Welcome, {{ session.get('username') }}!</h2>
+        <p>Monitor your job advertisement security scans.</p>
+    </section>
+
+    <!-- Dashboard Statistics -->
+    <section class="dashboard-cards">
+
+        <div class="card total">
+            <h3>Total Scans</h3>
+            <h2>{{ stats.total }}</h2>
+        </div>
+
+        <div class="card high">
+            <h3>High Risk</h3>
+            <h2>{{ stats.high }}</h2>
+        </div>
+
+        <div class="card medium">
+            <h3>Medium Risk</h3>
+            <h2>{{ stats.medium }}</h2>
+        </div>
+
+        <div class="card low">
+            <h3>Low Risk</h3>
+            <h2>{{ stats.low }}</h2>
+        </div>
+
+    </section>
+
+    <!-- Dashboard Navigation -->
+    <section class="dashboard-navigation">
+
+        <h3>Dashboard Navigation</h3>
+
+        <div class="dashboard-links">
+
+            <a href="{{ url_for('home') }}">Home</a>
+
+            <a href="{{ url_for('history') }}">Scan History</a>
+
+            <a href="{{ url_for('profile') }}">My Profile</a>
+
+            <a href="{{ url_for('tips') }}">Security Tips</a>
+
+            <form action="{{ url_for('logout') }}"
+                  method="POST"
+                  class="dashboard-logout">
+
+                <input type="hidden"
+                       name="csrf_token"
+                       value="{{ csrf_token() }}">
+
+                <button type="submit">Logout</button>
+
+            </form>
+
+        </div>
+
+    </section>
+
+</div>
+
+{% endblock %}

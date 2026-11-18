@@ -1,0 +1,152 @@
+
+{% extends "base.html" %}
+
+{% block title %}Home - Karachi JobShield{% endblock %}
+
+{% block content %}
+
+    <!-- User Account -->
+    <div class="card">
+
+        {% if session.get('username') %}
+
+            <h2>Welcome, {{ session.get('username') }}!</h2>
+            <p>You are successfully logged in.</p>
+
+            <p>
+                <a href="{{ url_for('dashboard') }}">My Dashboard</a>
+                |
+                <a href="{{ url_for('profile') }}">My Profile</a>
+            </p>
+
+            <form action="{{ url_for('logout') }}" method="POST">
+                <input type="hidden" name="csrf_token"
+                       value="{{ csrf_token() }}">
+                <button type="submit">Logout</button>
+            </form>
+
+        {% else %}
+
+            <h2>Welcome to Karachi JobShield</h2>
+
+            <p>
+                Protect yourself from fake job advertisements
+                and recruitment scams.
+            </p>
+
+            <p>
+                <a href="{{ url_for('login') }}">Login</a>
+                |
+                <a href="{{ url_for('register') }}">Register</a>
+            </p>
+
+        {% endif %}
+
+    </div>
+
+    <!-- Security Analysis Center -->
+    <div class="card">
+        <h2>Security Analysis Center</h2>
+        <p>
+            Analyze suspicious job advertisements and recruitment links
+            to identify possible scam indicators.
+        </p>
+    </div>
+
+    <!-- Job Advertisement Analyzer -->
+    <div class="card">
+        <h2>1. Job Advertisement Analyzer</h2>
+
+        <p>
+            Paste a job advertisement to check for suspicious
+            recruitment language and scam indicators.
+        </p>
+
+        <form action="{{ url_for('analyze') }}" method="POST">
+            <input type="hidden" name="csrf_token"
+                   value="{{ csrf_token() }}">
+
+            <label for="job_ad">Paste your job advertisement:</label>
+            <br><br>
+
+            <textarea id="job_ad" name="job_ad" rows="10"
+                      placeholder="Paste job advertisement here..."
+                      required></textarea>
+
+            <br><br>
+            <button type="submit">Analyze Advertisement</button>
+        </form>
+    </div>
+
+    <!-- Suspicious Job Link Detector -->
+    <div class="card">
+        <h2>2. Suspicious Job Link Detector</h2>
+
+        <p>
+            Enter a recruitment website URL to check for suspicious
+            link patterns.
+        </p>
+
+        <form action="{{ url_for('check_link') }}" method="POST">
+            <input type="hidden" name="csrf_token"
+                   value="{{ csrf_token() }}">
+
+            <label for="job_link">Enter job website link:</label>
+            <br><br>
+
+            <input type="text" id="job_link" name="job_link"
+                   placeholder="https://example.com/job" required>
+
+            <br><br>
+            <button type="submit">Analyze Job Link</button>
+        </form>
+    </div>
+
+    <!-- Fake Job Poster / Image Detector -->
+    <div class="card">
+        <h2>3. Fake Job Poster / Image Detector</h2>
+
+        <p>
+            Upload a job advertisement image to extract its text
+            and identify possible recruitment scam indicators.
+        </p>
+
+        <form action="{{ url_for('check_image') }}"
+              method="POST" enctype="multipart/form-data">
+
+            <input type="hidden" name="csrf_token"
+                   value="{{ csrf_token() }}">
+
+            <label for="job_image">Select Job Advertisement Image:</label>
+            <br><br>
+
+            <input type="file" id="job_image" name="job_image"
+                   accept=".png,.jpg,.jpeg" required>
+
+            <br><br>
+            <button type="submit">Analyze Job Poster</button>
+        </form>
+
+        <p>
+            <small>
+                Supported formats: PNG, JPG, JPEG. Maximum size: 5 MB.
+            </small>
+        </p>
+    </div>
+
+    <!-- Other Features -->
+    <div class="card">
+        <h2>Other Features</h2>
+
+        {% if session.get('username') %}
+            <p><a href="{{ url_for('history') }}">View Scan History</a></p>
+            <p><a href="{{ url_for('dashboard') }}">View Dashboard</a></p>
+            <p><a href="{{ url_for('profile') }}">Manage My Profile</a></p>
+        {% endif %}
+
+        <p>
+            <a href="{{ url_for('tips') }}">Cybersecurity Safety Tips</a>
+        </p>
+    </div>
+
+{% endblock %}

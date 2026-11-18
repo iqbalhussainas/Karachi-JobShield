@@ -1,0 +1,75 @@
+
+{% extends "base.html" %}
+
+{% block title %}Job Poster Analysis Result - Karachi JobShield{% endblock %}
+
+{% block content %}
+
+<div class="card">
+
+    <h2>Image Analysis Result</h2>
+
+    <h3>Extracted Advertisement Text</h3>
+
+    <p>
+        The following text was extracted from your uploaded
+        job advertisement image using Tesseract OCR.
+    </p>
+
+    <div class="extracted-text">{{ extracted_text }}</div>
+
+    <br>
+
+    <h3>Risk Assessment</h3>
+
+    <p>Risk Score:</p>
+
+    <h2>{{ risk_score }}/100</h2>
+
+    <h3>Risk Level: {{ risk_level }}</h3>
+
+    <h3>Security Findings</h3>
+
+    {% if warnings %}
+
+        <ul>
+            {% for warning in warnings %}
+                <li>{{ warning }}</li>
+            {% endfor %}
+        </ul>
+
+    {% else %}
+
+        <p>No warning signs detected by our basic rules.</p>
+
+    {% endif %}
+
+    <hr>
+
+    <h3>Educational Disclaimer</h3>
+
+    <p>
+        Karachi JobShield uses OCR technology to extract text
+        from images and basic keyword-based analysis to identify
+        possible warning signs.
+
+        OCR may not recognize all text correctly.
+        The risk score is an indicator, not proof that an
+        advertisement is fraudulent or genuine.
+    </p>
+
+    <p>
+        <a href="{{ url_for('home') }}">
+            Analyze Another Advertisement
+        </a>
+    </p>
+
+    <p>
+        <a href="{{ url_for('history') }}">
+            View Scan History
+        </a>
+    </p>
+
+</div>
+
+{% endblock %}
