@@ -145,54 +145,120 @@ def analyze_job_ad_text(job_ad):
     risk_score = 0
     text = job_ad.lower()
 
+    # Payment-related warning keywords
+    payment_keywords = [
+        "registration fee",
+        "advance payment",
+        "processing fee",
+        "security deposit",
+        "pay to apply",
+        "pay before joining",
+        "training fee"
+    ]
+
+    # Check for payment demands without ignoring negation
+    payment_detected = False
+
+    for keyword in payment_keywords:
+
+        if keyword in text:
+
+            # Get the sentence containing the keyword
+            sentences = re.split(r"[.!?\n]", text)
+
+            for sentence in sentences:
+
+                if keyword in sentence:
+
+                    # Check whether payment is denied
+                    negative_patterns = [
+                        r"\bno\b",
+                        r"\bnot\b",
+                        r"\bnever\b",
+                        r"\bwithout\b",
+                        r"\bdoes not\b",
+                        r"\ndo not\b",
+                        r"\bdon't\b",
+                        r"\bnot required\b",
+                        r"\bnot need\b"
+                    ]
+
+                    is_negative = any(
+                        re.search(pattern, sentence)
+                        for pattern in negative_patterns
+                    )
+
+                    if not is_negative:
+                        payment_detected = True
+                        break
+
+            if payment_detected:
+                break
+
+    if payment_detected:
+        risk_score += 30
+        warnings.append(
+            "The advertisement asks for registration or advance payment."
+        )
+
+    # Other risk detection rules
     risk_rules = [
-        (30, [
-            "registration fee", "advance payment",
-            "processing fee", "security deposit",
-            "pay to apply", "pay before joining",
-            "training fee"
-        ], "The advertisement asks for registration or advance payment."),
 
         (20, [
-            "no interview", "without interview",
-            "interview not required", "no interview needed"
+            "no interview",
+            "without interview",
+            "interview not required",
+            "no interview needed"
         ], "The advertisement says no interview is required."),
 
         (20, [
-            "guaranteed job", "guaranteed employment",
-            "100% job guarantee", "sure job"
+            "guaranteed job",
+            "guaranteed employment",
+            "100% job guarantee",
+            "sure job"
         ], "The advertisement promises guaranteed employment."),
 
         (15, [
-            "urgent hiring", "apply immediately",
-            "limited seats", "apply today"
+            "urgent hiring",
+            "apply immediately",
+            "limited seats",
+            "apply today"
         ], "The advertisement uses urgent hiring pressure."),
 
         (15, [
-            "earn millions", "easy money",
-            "get rich quickly", "high income with no work",
+            "earn millions",
+            "easy money",
+            "get rich quickly",
+            "high income with no work",
             "earn thousands daily"
         ], "The advertisement makes unrealistic earning promises."),
 
         (30, [
-            "share your otp", "send your otp",
-            "share your pin", "send your atm pin",
-            "share your password", "bank password"
+            "share your otp",
+            "send your otp",
+            "share your pin",
+            "send your atm pin",
+            "share your password",
+            "bank password"
         ], "The advertisement requests sensitive banking or account credentials.")
     ]
 
     for points, keywords, warning in risk_rules:
 
         if any(keyword in text for keyword in keywords):
+
             risk_score += points
             warnings.append(warning)
 
     risk_score = min(risk_score, 100)
 
+    # Determine risk level
     if risk_score >= 60:
         risk_level = "High Risk"
+
     elif risk_score >= 30:
         risk_level = "Medium Risk"
+
     else:
         risk_level = "Low Risk"
 
@@ -202,7 +268,6 @@ def analyze_job_ad_text(job_ad):
         )
 
     return risk_score, risk_level, warnings
-
 
 # Analyze Suspicious Job Link
 def analyze_job_link(link):
@@ -684,3 +749,4 @@ def tips():
 if __name__ == "__main__":
 
     app.run(debug=False)
+    
