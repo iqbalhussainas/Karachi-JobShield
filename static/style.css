@@ -290,3 +290,8 @@ footer {
     white-space: pre-wrap;
     overflow-wrap: anywhere;
 }
+/* Responsive scan history table */
+.table-scroll {
+    width: 100%;
+    overflow-x: auto;
+}
