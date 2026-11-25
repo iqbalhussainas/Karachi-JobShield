@@ -6,3 +6,5 @@ __pycache__/
 jobshield.db
 .vscode/
 job_test.png
+venv_hf/
+
