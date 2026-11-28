@@ -6,3 +6,7 @@ __pycache__/
 jobshield.db
 .vscode/
 job_test.png
+# Karachi JobShield AI - local environments, datasets and duplicate downloads
+ai_model/venv_ai/
+ai_model/hf_downloaded/
+ai_model/data/*.csv

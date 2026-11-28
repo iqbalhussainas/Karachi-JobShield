@@ -28,6 +28,31 @@
 
     <h3>Risk Level: {{ risk_level }}</h3>
 
+    <!-- Experimental AI Model Result -->
+    <div class="result-card">
+
+        <h3>Experimental AI Model Prediction</h3>
+
+        <p>
+            AI Prediction:
+            <strong>{{ ai_prediction_label }}</strong>
+        </p>
+
+        <p>
+            This prediction is generated from the text extracted
+            from your image using Tesseract OCR.
+        </p>
+
+        <p>
+            The AI model was trained on English-language job
+            advertisements. It has not been validated for Pakistani
+            or Urdu job advertisements. Its prediction is experimental
+            and is not proof that an advertisement is fraudulent
+            or genuine.
+        </p>
+
+    </div>
+
     <h3>Security Findings</h3>
 
     {% if warnings %}
@@ -49,13 +74,14 @@
     <h3>Educational Disclaimer</h3>
 
     <p>
-        Karachi JobShield uses OCR technology to extract text
-        from images and basic keyword-based analysis to identify
-        possible warning signs.
+        Karachi JobShield uses Tesseract OCR to extract text
+        from images, rule-based analysis, and an experimental
+        AI model to identify possible warning signs.
 
         OCR may not recognize all text correctly.
-        The risk score is an indicator, not proof that an
-        advertisement is fraudulent or genuine.
+        The risk score and AI prediction are indicators,
+        not proof that an advertisement is fraudulent or genuine.
+        Always verify the employer through official sources.
     </p>
 
     <p>

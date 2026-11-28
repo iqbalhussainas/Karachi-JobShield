@@ -36,6 +36,7 @@ from database import (
 )
 
 from auth import login_user
+from ai_model.predictor import predict_job_fraud
 
 
 # ==========================================
@@ -65,7 +66,6 @@ app.config["SESSION_COOKIE_SECURE"] = (
     os.getenv("SESSION_COOKIE_SECURE", "False").lower() == "true"
 )
 
-
 # Maximum uploaded file size: 5 MB
 app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024
 
@@ -79,7 +79,6 @@ create_database()
 # ==========================================
 # SECURITY RESPONSE HEADERS
 # ==========================================
-
 
 @app.after_request
 def add_security_headers(response):
@@ -111,7 +110,8 @@ def add_security_headers(response):
 
 # ==========================================
 # FILE UPLOAD SIZE ERROR
-# =========================================
+# ==========================================
+
 @app.errorhandler(413)
 def file_too_large(error):
 
@@ -225,39 +225,39 @@ def analyze_job_ad_text(job_ad):
 
     payment_detected = False
 
+    # Split advertisement into sentences
+    sentences = re.split(r"[.!?\n]", text)
+
+    negative_patterns = [
+        r"\bno\s+(?:registration|advance|processing|security|training|application)?\s*(?:fee|fees|payment|deposit|charge)s?\b",
+
+        r"\b(?:registration|advance|processing|security|training|application)?\s*(?:fee|fees|payment|deposit|charge)s?\s+(?:is|are)\s+not\s+required\b",
+
+        r"\b(?:does not|do not|don't|never)\s+(?:charge|require|ask for|request)\s+(?:(?:a|any)\s+)?(?:registration|advance|processing|security|training|application)?\s*(?:fee|fees|payment|deposit|charge)s?\b",
+
+        r"\b(?:do not|don't|never)\s+pay\s+(?:any\s+)?(?:registration|advance|processing|security|training|application)?\s*(?:fee|fees|payment|deposit|charge)s?\b",
+
+        r"\bno payment\s+(?:is\s+)?required\b",
+        r"\bnot required to pay\b"
+    ]
+
     for keyword in payment_keywords:
 
-        if keyword in text:
+        for sentence in sentences:
 
-            sentences = re.split(r"[.!?\n]", text)
+            if keyword in sentence:
 
-            for sentence in sentences:
+                is_negative = any(
+                    re.search(pattern, sentence)
+                    for pattern in negative_patterns
+                )
 
-                if keyword in sentence:
+                if not is_negative:
+                    payment_detected = True
+                    break
 
-                    negative_patterns = [
-                        r"\bno\b",
-                        r"\bnot\b",
-                        r"\bnever\b",
-                        r"\bwithout\b",
-                        r"\bdoes not\b",
-                        r"\bdo not\b",
-                        r"\bdon't\b",
-                        r"\bnot required\b",
-                        r"\bnot need\b"
-                    ]
-
-                    is_negative = any(
-                        re.search(pattern, sentence)
-                        for pattern in negative_patterns
-                    )
-
-                    if not is_negative:
-                        payment_detected = True
-                        break
-
-            if payment_detected:
-                break
+        if payment_detected:
+            break
 
     if payment_detected:
         risk_score += 30
@@ -265,12 +265,14 @@ def analyze_job_ad_text(job_ad):
             "The advertisement asks for registration or advance payment."
         )
 
+
     # Other job advertisement risk rules
     risk_rules = [
 
         (20, [
             "no interview",
             "without interview",
+            "without an interview",
             "interview not required",
             "no interview needed"
         ], "The advertisement says no interview is required."),
@@ -333,7 +335,7 @@ def analyze_job_ad_text(job_ad):
 
 
 # ==========================================
-# SUSPICIOUS JOB LINK ANALYSIS
+# JOB LINK ANALYSIS HELPER
 # ==========================================
 
 def analyze_job_link(link):
@@ -421,7 +423,6 @@ def analyze_job_link(link):
                 "The URL contains suspicious words often associated with phishing."
             )
 
-
         # Check @ symbol
         if "@" in parsed.netloc:
 
@@ -473,6 +474,106 @@ def analyze_job_link(link):
 def home():
 
     return render_template("index.html")
+
+
+# ==========================================
+# JOB ADVERTISEMENT ANALYSIS ROUTE
+# ==========================================
+
+@app.route("/analyze", methods=["POST"])
+@login_required
+def analyze():
+
+    job_ad = request.form.get("job_ad", "").strip()
+
+    if not job_ad:
+
+        flash("Please enter a job advertisement.")
+
+        return redirect(url_for("home"))
+
+    if len(job_ad) > 20000:
+
+        flash(
+            "Advertisement is too long. Maximum length is 20,000 characters."
+        )
+
+        return redirect(url_for("home"))
+
+    # Existing rule-based analysis
+    risk_score, risk_level, warnings = analyze_job_ad_text(job_ad)
+
+    # Experimental AI prediction
+    try:
+
+        ai_prediction = predict_job_fraud(job_ad)
+
+        ai_prediction_label = (
+            "Fraudulent" if ai_prediction == 1 else "Genuine"
+        )
+
+    except Exception:
+
+        app.logger.exception("AI MODEL PREDICTION ERROR")
+
+        ai_prediction_label = "AI Unavailable"
+
+    # Save original rule-based result
+    save_scan(
+        job_ad,
+        risk_score,
+        risk_level,
+        session["user_id"]
+    )
+
+    return render_template(
+        "result.html",
+        job_ad=job_ad,
+        risk_score=risk_score,
+        risk_level=risk_level,
+        warnings=warnings,
+        ai_prediction_label=ai_prediction_label
+    )
+
+
+# ==========================================
+# JOB LINK ANALYSIS ROUTE
+# ==========================================
+
+@app.route("/check_link", methods=["GET", "POST"])
+@login_required
+def check_link():
+
+    if request.method == "POST":
+
+        job_link = request.form.get("job_link", "").strip()
+
+        if not job_link:
+            flash("Please enter a job link.")
+            return redirect(url_for("check_link"))
+
+        if len(job_link) > 2048:
+            flash("The link is too long.")
+            return redirect(url_for("check_link"))
+
+        risk_score, risk_level, warnings = analyze_job_link(job_link)
+
+        save_scan(
+            job_link,
+            risk_score,
+            risk_level,
+            session["user_id"]
+        )
+
+        return render_template(
+            "link_result.html",
+            job_link=job_link,
+            risk_score=risk_score,
+            risk_level=risk_level,
+            warnings=warnings
+        )
+
+    return render_template("check_link.html")
 
 
 # ==========================================
@@ -722,92 +823,6 @@ def profile():
 
 
 # ==========================================
-# JOB ADVERTISEMENT ANALYSIS
-# ==========================================
-
-@app.route("/analyze", methods=["POST"])
-@login_required
-def analyze():
-
-    job_ad = request.form.get("job_ad", "").strip()
-
-    if not job_ad:
-
-        flash("Please enter a job advertisement.")
-
-        return redirect(url_for("home"))
-
-    if len(job_ad) > 20000:
-
-        flash(
-            "Advertisement is too long. Maximum length is 20,000 characters."
-        )
-
-        return redirect(url_for("home"))
-
-    risk_score, risk_level, warnings = analyze_job_ad_text(job_ad)
-
-    save_scan(
-        job_ad,
-        risk_score,
-        risk_level,
-        session["user_id"]
-    )
-
-    return render_template(
-        "result.html",
-        job_ad=job_ad,
-        risk_score=risk_score,
-        risk_level=risk_level,
-        warnings=warnings
-    )
-
-
-# ==========================================
-# JOB LINK ANALYSIS
-# ==========================================
-
-@app.route("/check_link", methods=["GET", "POST"])
-@login_required
-def check_link():
-
-    if request.method == "POST":
-
-        job_link = request.form.get("job_link", "").strip()
-
-        if not job_link:
-
-            flash("Please enter a job link.")
-
-            return redirect(url_for("check_link"))
-
-        if len(job_link) > 2048:
-
-            flash("The link is too long.")
-
-            return redirect(url_for("check_link"))
-
-        risk_score, risk_level, warnings = analyze_job_link(job_link)
-
-        save_scan(
-            job_link,
-            risk_score,
-            risk_level,
-            session["user_id"]
-        )
-
-        return render_template(
-            "link_result.html",
-            job_link=job_link,
-            risk_score=risk_score,
-            risk_level=risk_level,
-            warnings=warnings
-        )
-
-    return render_template("check_link.html")
-
-
-# ==========================================
 # IMAGE OCR DETECTOR
 # ==========================================
 
@@ -883,12 +898,27 @@ def check_image():
         # Limit extracted text
         extracted_text = extracted_text[:20000]
 
-        # Analyze extracted advertisement
+        # Existing rule-based analysis
         risk_score, risk_level, warnings = analyze_job_ad_text(
             extracted_text
         )
 
-        # Save scan in database
+        # Experimental AI prediction
+        try:
+
+            ai_prediction = predict_job_fraud(extracted_text)
+
+            ai_prediction_label = (
+                "Fraudulent" if ai_prediction == 1 else "Genuine"
+            )
+
+        except Exception:
+
+            app.logger.exception("AI MODEL PREDICTION ERROR")
+
+            ai_prediction_label = "AI Unavailable"
+
+        # Save original rule-based result
         save_scan(
             extracted_text,
             risk_score,
@@ -896,13 +926,13 @@ def check_image():
             session["user_id"]
         )
 
-        # Display analysis result
         return render_template(
             "image_result.html",
             extracted_text=extracted_text,
             risk_score=risk_score,
             risk_level=risk_level,
-            warnings=warnings
+            warnings=warnings,
+            ai_prediction_label=ai_prediction_label
         )
 
     except (
